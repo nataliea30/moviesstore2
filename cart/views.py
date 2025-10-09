@@ -4,6 +4,9 @@ from movies.models import Movie
 from .utils import calculate_cart_total
 from .models import Order, Item
 from django.contrib.auth.decorators import login_required
+from django.db.models import Sum
+from django.http import JsonResponse 
+
 
 def index(request):
     cart_total = 0
@@ -55,3 +58,55 @@ def purchase(request):
     template_data['title'] = 'Purchase confirmation'
     template_data['order_id'] = order.id
     return render(request, 'cart/purchase.html', {'template_data': template_data})
+
+
+# --- NEW FUNCTION FOR THE MAP DATA ---
+def get_top_movies_by_state(request):
+    """
+    Calculates the top 3 most bought movies in each U.S. state.
+    """
+    # 1. Aggregate and order the data
+    sales_aggregation = Item.objects.values(
+        'order__state',
+        'movie__name',
+        'movie__id'
+    ).annotate(
+        total_quantity=Sum('quantity')
+    ).order_by('order__state', '-total_quantity')
+
+    
+    # 2. Process the ordered list to extract only the top 3 per state
+    top_movies_per_state = {}
+    current_state = None
+    rank = 0
+    
+    for sale in sales_aggregation:
+        state = sale['order__state']
+        
+        # If we switch to a new state in the ordered list, reset the rank and list
+        if state != current_state:
+            current_state = state
+            rank = 1
+            top_movies_per_state[state] = []
+        
+        # Only include the top 3 for the current state
+        if rank <= 3:
+            top_movies_per_state[state].append({
+                'rank': rank,
+                'movie_id': sale['movie__id'],
+                'movie_name': sale['movie__name'],
+                'quantity': sale['total_quantity']
+            })
+            rank += 1
+            
+    # 3. Format the data into a list of objects for the frontend
+    response_data = [
+        {
+            'state': state,
+            'top_3_movies': movies
+        }
+        for state, movies in top_movies_per_state.items()
+    ]
+    
+    # Return as a JSON response
+    return JsonResponse(response_data, safe=False)
