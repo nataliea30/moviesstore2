@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="mb-0">
+                        <i class="fas fa-plus"></i> Create New Petition
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                <i class="fas fa-heading"></i> {{ form.title.label }}
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.title.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.movie_title.id_for_label }}" class="form-label">
+                                <i class="fas fa-film"></i> {{ form.movie_title.label }}
+                            </label>
+                            {{ form.movie_title }}
+                            {% if form.movie_title.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.movie_title.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                <i class="fas fa-align-left"></i> {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Explain why this movie should be added to our catalog. What makes it special?
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'petitions.index' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Petitions
+                            </a>
+                            <button type="submit" class="btn btn-dark">
+                                <i class="fas fa-save"></i> Create Petition
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

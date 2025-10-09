@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="text-dark">Movie Petitions</h2>
+                    <hr />
+                </div>
+                {% if user.is_authenticated %}
+                <a href="{% url 'petitions.create' %}" class="btn btn-dark">
+                    <i class="fas fa-plus"></i> Create New Petition
+                </a>
+                {% endif %}
+            </div>
+            
+            {% if not user.is_authenticated %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                <a href="{% url 'accounts.login' %}">Login</a> or 
+                <a href="{% url 'accounts.signup' %}">Sign up</a> to create petitions and vote!
+            </div>
+            {% endif %}
+
+            {% if petitions %}
+                <div class="row">
+                    {% for petition in petitions %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title text-primary">{{ petition.title }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-film"></i> {{ petition.movie_title }}
+                                </h6>
+                                <p class="card-text flex-grow-1">{{ petition.description|truncatewords:20 }}</p>
+                                
+                                <div class="mt-auto">
+                                    <div class="row text-center mb-3">
+                                        <div class="col-4">
+                                            <div class="text-success">
+                                                <i class="fas fa-thumbs-up"></i>
+                                                <div class="fw-bold">{{ petition.yes_count }}</div>
+                                                <small>Yes</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="text-danger">
+                                                <i class="fas fa-thumbs-down"></i>
+                                                <div class="fw-bold">{{ petition.no_count }}</div>
+                                                <small>No</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="text-info">
+                                                <i class="fas fa-users"></i>
+                                                <div class="fw-bold">{{ petition.total_votes_count }}</div>
+                                                <small>Total</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            by {{ petition.created_by.username }}
+                                        </small>
+                                        <a href="{% url 'petitions.detail' petition.id %}" class="btn btn-outline-dark btn-sm">
+                                            View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                    <h3 class="text-muted">No petitions yet</h3>
+                    <p class="text-muted">Be the first to create a petition for a movie you'd like to see!</p>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'petitions.create' %}" class="btn btn-dark">
+                        <i class="fas fa-plus"></i> Create First Petition
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

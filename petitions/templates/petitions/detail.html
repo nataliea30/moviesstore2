@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="mb-0">
+                        <i class="fas fa-clipboard-list"></i> {{ petition.title }}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h4 class="text-primary">
+                            <i class="fas fa-film"></i> {{ petition.movie_title }}
+                        </h4>
+                        <p class="lead">{{ petition.description }}</p>
+                    </div>
+
+                    <div class="row text-center mb-4">
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <i class="fas fa-thumbs-up fa-2x text-success mb-2"></i>
+                                    <h3 class="text-success" id="yes-count">{{ petition.yes_votes_count }}</h3>
+                                    <small class="text-muted">Yes Votes</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <i class="fas fa-thumbs-down fa-2x text-danger mb-2"></i>
+                                    <h3 class="text-danger" id="no-count">{{ petition.no_votes_count }}</h3>
+                                    <small class="text-muted">No Votes</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <i class="fas fa-users fa-2x text-info mb-2"></i>
+                                    <h3 class="text-info" id="total-count">{{ petition.total_votes_count }}</h3>
+                                    <small class="text-muted">Total Votes</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                        <div class="text-center mb-4">
+                            <h5>Cast Your Vote</h5>
+                            {% csrf_token %}
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-success vote-btn" data-vote="yes" data-petition="{{ petition.id }}">
+                                    <i class="fas fa-thumbs-up"></i> Yes
+                                </button>
+                                <button type="button" class="btn btn-danger vote-btn" data-vote="no" data-petition="{{ petition.id }}">
+                                    <i class="fas fa-thumbs-down"></i> No
+                                </button>
+                            </div>
+                            <div id="vote-message" class="mt-2"></div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle"></i> 
+                            <a href="{% url 'accounts.login' %}">Login</a> to vote on this petition!
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-user"></i> Created by {{ petition.created_by.username }} on {{ petition.created_at|date:"M d, Y" }}
+                        </small>
+                        <a href="{% url 'petitions.index' %}" class="btn btn-outline-dark">
+                            <i class="fas fa-arrow-left"></i> Back to Petitions
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const voteButtons = document.querySelectorAll('.vote-btn');
+    const voteMessage = document.getElementById('vote-message');
+    
+    voteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const voteType = this.dataset.vote;
+            const petitionId = this.dataset.petition;
+            
+            // Disable all buttons during request
+            voteButtons.forEach(btn => btn.disabled = true);
+            
+            fetch(`/petitions/${petitionId}/vote/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: `vote_type=${voteType}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update vote counts
+                    document.getElementById('yes-count').textContent = data.yes_count;
+                    document.getElementById('no-count').textContent = data.no_count;
+                    document.getElementById('total-count').textContent = data.total_count;
+                    
+                    // Show success message
+                    voteMessage.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check"></i> ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>`;
+                    
+                    // Update button states
+                    voteButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.dataset.vote === data.user_vote) {
+                            btn.classList.add('active');
+                        }
+                    });
+                } else {
+                    voteMessage.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i> ${data.error}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>`;
+                }
+            })
+            .catch(error => {
+                voteMessage.innerHTML = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> An error occurred. Please try again.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>`;
+            })
+            .finally(() => {
+                // Re-enable buttons
+                voteButtons.forEach(btn => btn.disabled = false);
+            });
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

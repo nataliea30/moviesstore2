@@ -1,0 +1,74 @@
+.bg-index{
+  background: url("/static/img/background.jpg") no-repeat fixed;
+  background-size: 100% auto;
+}
+
+.navbar a.nav-link {
+  color: #FFFEF6 !important;
+}
+
+.bg-dark {
+  background-color: #2E2E2E !important;
+}
+
+.ms-footer {
+  background-color: #202020;
+}
+
+.ms-footer p {
+  color: #7F7F7F;
+  font-size: 13px;
+}
+
+.ms-footer a:hover {
+  color: #6ab43e;
+  text-decoration: none;
+}
+
+.ms-footer-bottom span{
+  font-size: 13px;
+  line-height: 38px;
+}
+
+.ms-footer-bottom a {
+  color: #6ab43e;
+  text-decoration: none;
+}
+
+.ms-footer-bottom a:hover {
+  color: #fff;
+}
+
+.img-card-200 {
+  width: 100%;
+  max-width: 250px;
+  max-height: 350px;
+  object-fit: contain;
+  height: auto;
+}
+
+.img-card-400 {
+  width: 100% !important;
+  max-width: 300px !important;
+  max-height: 300px !important;
+  object-fit: cover;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+/* Additional movie image sizing */
+.movie-detail-image {
+  max-width: 500px !important;
+  max-height: 500px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}

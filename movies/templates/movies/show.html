@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+<div class="p-3">
+  <div class="container">
+    <div class="row mt-3">
+      <div class="col-md-6 mx-auto mb-3">
+        <h2>{{ template_data.movie.name }}</h2>
+        <hr />
+        <p><b>Description:</b> {{ template_data.movie.description }}</p>
+        <p><b>Price:</b> ${{ template_data.movie.price }}</p>
+
+        <p class="card-text">
+          <form method="post" action="{% url 'cart.add' id=template_data.movie.id %}">
+            <div class="row">
+              {% csrf_token %}
+              <div class="col-auto">
+                <div class="input-group col-auto">
+                  <div class="input-group-text">Quantity</div>
+                  <input type="number" min="1" max="10" class="form-control quantity-input" name="quantity" value="1">
+                </div>
+              </div>
+              <div class="col-auto">
+                <button class="btn bg-dark text-white" type="submit">Add to cart</button>
+              </div>
+            </div>
+          </form>
+        </p>
+
+        <h2>Reviews</h2>
+        <hr />
+        <ul class="list-group">
+          {% for review in template_data.reviews %}
+            <li class="list-group-item pb-3 pt-3">
+              <h5 class="card-title">Review by {{ review.user.username }}</h5>
+              <h6 class="card-subtitle mb-2 text-muted">{{ review.date }}</h6>
+              <p class="card-text mb-2">{{ review.comment }}</p>
+
+              {% if user.is_authenticated and user == review.user %}
+                <a class="btn btn-primary btn-sm me-2"
+                   href="{% url 'movies.edit_review' id=template_data.movie.id review_id=review.id %}">Edit</a>
+                <a class="btn btn-danger btn-sm"
+                   href="{% url 'movies.delete_review' id=template_data.movie.id review_id=review.id %}">Delete</a>
+              {% endif %}
+
+              {% if user.is_authenticated %}
+                <details class="mt-2">
+                  <summary class="mb-2">Reply</summary>
+                  <form method="POST" action="{% url 'movies.create_reply' id=template_data.movie.id review_id=review.id %}">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                      <label for="reply-{{ review.id }}">Comment:</label>
+                      <textarea id="reply-{{ review.id }}" name="comment" required class="form-control"></textarea>
+                    </div>
+                    <button type="submit" class="btn bg-dark text-white btn-sm">Post Reply</button>
+                  </form>
+                </details>
+              {% endif %}
+
+              {% if review.children.all %}
+                <ul class="list-group mt-3 ms-3">
+                  {% for child in review.children.all %}
+                    <li class="list-group-item">
+                      <h6 class="mb-1">Reply by {{ child.user.username }}</h6>
+                      <small class="text-muted d-block mb-1">{{ child.date }}</small>
+                      <p class="mb-2">{{ child.comment }}</p>
+
+                      {% if user.is_authenticated and user == child.user %}
+                        <a class="btn btn-primary btn-sm me-2"
+                           href="{% url 'movies.edit_review' id=template_data.movie.id review_id=child.id %}">Edit</a>
+                        <a class="btn btn-danger btn-sm"
+                           href="{% url 'movies.delete_review' id=template_data.movie.id review_id=child.id %}">Delete</a>
+                      {% endif %}
+
+                      {% if user.is_authenticated %}
+                        <details class="mt-2">
+                          <summary class="mb-2">Reply</summary>
+                          <form method="POST" action="{% url 'movies.create_reply' id=template_data.movie.id review_id=child.id %}">
+                            {% csrf_token %}
+                            <div class="mb-2">
+                              <label for="reply-{{ child.id }}">Comment:</label>
+                              <textarea id="reply-{{ child.id }}" name="comment" required class="form-control"></textarea>
+                            </div>
+                            <button type="submit" class="btn bg-dark text-white btn-sm">Post Reply</button>
+                          </form>
+                        </details>
+                      {% endif %}
+
+                      {% if child.children.all %}
+                        <ul class="list-group mt-3 ms-3">
+                          {% for grandchild in child.children.all %}
+                            <li class="list-group-item">
+                              <h6 class="mb-1">Reply by {{ grandchild.user.username }}</h6>
+                              <small class="text-muted d-block mb-1">{{ grandchild.date }}</small>
+                              <p class="mb-2">{{ grandchild.comment }}</p>
+
+                              {% if user.is_authenticated and user == grandchild.user %}
+                                <a class="btn btn-primary btn-sm me-2"
+                                   href="{% url 'movies.edit_review' id=template_data.movie.id review_id=grandchild.id %}">Edit</a>
+                                <a class="btn btn-danger btn-sm"
+                                   href="{% url 'movies.delete_review' id=template_data.movie.id review_id=grandchild.id %}">Delete</a>
+                              {% endif %}
+
+                              {% if user.is_authenticated %}
+                                <details class="mt-2">
+                                  <summary class="mb-2">Reply</summary>
+                                  <form method="POST" action="{% url 'movies.create_reply' id=template_data.movie.id review_id=grandchild.id %}">
+                                    {% csrf_token %}
+                                    <div class="mb-2">
+                                      <label for="reply-{{ grandchild.id }}">Comment:</label>
+                                      <textarea id="reply-{{ grandchild.id }}" name="comment" required class="form-control"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn bg-dark text-white btn-sm">Post Reply</button>
+                                  </form>
+                                </details>
+                              {% endif %}
+                            </li>
+                          {% endfor %}
+                        </ul>
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </li>
+          {% empty %}
+            <li class="list-group-item">No reviews yet.</li>
+          {% endfor %}
+        </ul>
+
+        {% if user.is_authenticated %}
+          <div class="container mt-4">
+            <div class="row justify-content-center">
+              <div class="col-12">
+                <div class="card shadow p-3 mb-4 rounded">
+                  <div class="card-body">
+                    <b class="text-start">Create a review</b><br /><br />
+                    <form method="POST" action="{% url 'movies.create_review' id=template_data.movie.id %}">
+                      {% csrf_token %}
+                      <p>
+                        <label for="comment">Comment:</label>
+                        <textarea name="comment" required class="form-control" id="comment"></textarea>
+                      </p>
+                      <div class="text-center">
+                        <button type="submit" class="btn bg-dark text-white">
+                          Add Review
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="col-md-6 mx-auto mb-3 text-center">
+        <img src="{{ template_data.movie.image.url }}" class="rounded img-card-400" />
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
