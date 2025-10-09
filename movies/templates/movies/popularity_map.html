@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4 mb-5">
+  <h2 class="mb-3">U.S. State Popularity Map</h2>
+  <p>See which movies are trending across different states.</p>
+  
+  <!-- State Search Dropdown -->
+  <div class="row mb-4">
+    <div class="col-md-6 offset-md-6">
+      <label for="stateSearch" class="form-label">Search for a state:</label>
+      <div class="dropdown">
+        <input type="text" class="form-control" id="stateSearch" placeholder="Type to search states..." autocomplete="off" data-bs-toggle="dropdown" aria-expanded="false">
+        <ul class="dropdown-menu" id="stateDropdown" style="max-height: 200px; overflow-y: auto; width: 100%;">
+          <!-- States will be populated by JavaScript -->
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <div id="map" style="height: 550px; border-radius: 12px;"></div>
+</div>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  const stateCoords = {
+  "Alabama": [32.806671, -86.791130],
+  "Alaska": [61.370716, -152.404419],
+  "Arizona": [33.729759, -111.431221],
+  "Arkansas": [34.969704, -92.373123],
+  "California": [36.116203, -119.681564],
+  "Colorado": [39.059811, -105.311104],
+  "Connecticut": [41.597782, -72.755371],
+  "Delaware": [39.318523, -75.507141],
+  "Florida": [27.766279, -81.686783],
+  "Georgia": [33.040619, -83.643074],
+  "Hawaii": [21.094318, -157.498337],
+  "Idaho": [44.240459, -114.478828],
+  "Illinois": [40.349457, -88.986137],
+  "Indiana": [39.849426, -86.258278],
+  "Iowa": [42.011539, -93.210526],
+  "Kansas": [38.526600, -96.726486],
+  "Kentucky": [37.668140, -84.670067],
+  "Louisiana": [31.169546, -91.867805],
+  "Maine": [44.693947, -69.381927],
+  "Maryland": [39.063946, -76.802101],
+  "Massachusetts": [42.230171, -71.530106],
+  "Michigan": [43.326618, -84.536095],
+  "Minnesota": [45.694454, -93.900192],
+  "Mississippi": [32.741646, -89.678696],
+  "Missouri": [38.456085, -92.288368],
+  "Montana": [46.921925, -110.454353],
+  "Nebraska": [41.125370, -98.268082],
+  "Nevada": [38.313515, -117.055374],
+  "New Hampshire": [43.452492, -71.563896],
+  "New Jersey": [40.298904, -74.521011],
+  "New Mexico": [34.840515, -106.248482],
+  "New York": [42.165726, -74.948051],
+  "North Carolina": [35.630066, -79.806419],
+  "North Dakota": [47.528912, -99.784012],
+  "Ohio": [40.388783, -82.764915],
+  "Oklahoma": [35.565342, -96.928917],
+  "Oregon": [44.572021, -122.070938],
+  "Pennsylvania": [40.590752, -77.209755],
+  "Rhode Island": [41.680893, -71.511780],
+  "South Carolina": [33.856892, -80.945007],
+  "South Dakota": [44.299782, -99.438828],
+  "Tennessee": [35.747845, -86.692345],
+  "Texas": [31.054487, -97.563461],
+  "Utah": [40.150032, -111.862434],
+  "Vermont": [44.045876, -72.710686],
+  "Virginia": [37.769337, -78.169968],
+  "Washington": [47.400902, -121.490494],
+  "West Virginia": [38.491226, -80.954456],
+  "Wisconsin": [44.268543, -89.616508],
+  "Wyoming": [42.755966, -107.302490],
+  "District of Columbia": [38.897438, -77.026817],
+  "Unknown": [37.5, -96.5]
+};
+
+  // Get all state names for the search dropdown
+  const allStates = Object.keys(stateCoords);
+  let mapMarkers = {}; // Store markers for easy access
+
+
+
+  const stateData = {{ region_data|safe }};
+
+
+  const map = L.map("map").setView([39.5, -98.35], 4);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 8,
+    minZoom: 3,
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  for (const state in stateData) {
+    const coords = stateCoords[state] || [37.5, -96.5];
+    const moviesList = stateData[state]
+      .map(m => `<li>${m.movie} — ${m.count} purchases</li>`)
+      .join("");
+    const popupHTML = `<strong>${state}</strong><br><ul>${moviesList}</ul>`;
+    const marker = L.circleMarker(coords, {
+      radius: 8,
+      color: "#1d3557",
+      fillColor: "#457b9d",
+      fillOpacity: 0.7
+    }).addTo(map).bindPopup(popupHTML);
+    mapMarkers[state] = marker;
+  }
+
+  // Add markers for all states (even those without data)
+  for (const state of allStates) {
+    if (!mapMarkers[state]) {
+      const coords = stateCoords[state];
+      const marker = L.circleMarker(coords, {
+        radius: 6,
+        color: "#ccc",
+        fillColor: "#f0f0f0",
+        fillOpacity: 0.5
+      }).addTo(map).bindPopup(`<strong>${state}</strong><br>No purchase data available`);
+      mapMarkers[state] = marker;
+    }
+  }
+
+  if (Object.keys(stateData).length === 0) {
+    L.popup()
+      .setLatLng([39.5, -98.35])
+      .setContent("No U.S. purchase data yet.")
+      .openOn(map);
+  }
+
+  // Search functionality
+  const stateSearchInput = document.getElementById('stateSearch');
+  const stateDropdown = document.getElementById('stateDropdown');
+  
+  // Populate dropdown with all states
+  function populateDropdown(states) {
+    stateDropdown.innerHTML = '';
+    states.forEach(state => {
+      const li = document.createElement('li');
+      li.className = 'dropdown-item';
+      li.textContent = state;
+      li.style.cursor = 'pointer';
+      li.addEventListener('click', () => selectState(state));
+      stateDropdown.appendChild(li);
+    });
+  }
+  
+  // Filter states based on search input
+  function filterStates(searchTerm) {
+    const filtered = allStates.filter(state => 
+      state.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    populateDropdown(filtered);
+    
+    // Show dropdown if there are results
+    if (filtered.length > 0 && searchTerm.length > 0) {
+      stateDropdown.style.display = 'block';
+    } else {
+      stateDropdown.style.display = 'none';
+    }
+  }
+  
+  // Select a state and center map on it
+  function selectState(state) {
+    const coords = stateCoords[state];
+    if (coords) {
+      map.setView(coords, 6); // Zoom level 6 for state view
+      
+      // Open popup for the selected state
+      if (mapMarkers[state]) {
+        mapMarkers[state].openPopup();
+        
+        // Highlight the selected marker temporarily
+        const originalStyle = mapMarkers[state].options;
+        mapMarkers[state].setStyle({
+          radius: 12,
+          color: "#ff6b6b",
+          fillColor: "#ff6b6b",
+          fillOpacity: 1
+        });
+        
+        // Reset style after 3 seconds
+        setTimeout(() => {
+          mapMarkers[state].setStyle(originalStyle);
+        }, 3000);
+      }
+    }
+    
+    // Update input and hide dropdown
+    stateSearchInput.value = state;
+    stateDropdown.style.display = 'none';
+  }
+  
+  // Event listeners
+  stateSearchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value;
+    filterStates(searchTerm);
+  });
+  
+  stateSearchInput.addEventListener('focus', () => {
+    if (stateDropdown.children.length > 0) {
+      stateDropdown.style.display = 'block';
+    }
+  });
+  
+  // Hide dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!stateSearchInput.contains(e.target) && !stateDropdown.contains(e.target)) {
+      stateDropdown.style.display = 'none';
+    }
+  });
+  
+  // Initialize dropdown with all states
+  populateDropdown(allStates);
+</script>
+{% endblock %}

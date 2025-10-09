@@ -62,3 +62,7 @@ def delete_review(request, id, review_id):
     review = get_object_or_404(Review, id=review_id, user=request.user)
     review.delete()
     return redirect('movies.show', id=id)
+
+@login_required
+def popularity_map(request):
+    return render(request, "movies/popularity_map.html", {"region_data": {}})

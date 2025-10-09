@@ -72,3 +72,9 @@ html, body {
   display: block;
   margin: 0 auto;
 }
+
+#map {
+  height: 550px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
