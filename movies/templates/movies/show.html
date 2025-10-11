@@ -27,6 +27,72 @@
           </form>
         </p>
 
+        <div class="card bg-light border-0 shadow-sm mb-4">
+          <div class="card-body">
+            <h4 class="card-title mb-3">Movie Ratings</h4>
+            <div class="d-flex align-items-center flex-wrap gap-3 mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <div class="rating-average-stars" data-average="{{ template_data.average_rating|default:'0' }}">
+                  <span class="rating-star-static">&#9733;</span>
+                  <span class="rating-star-static">&#9733;</span>
+                  <span class="rating-star-static">&#9733;</span>
+                  <span class="rating-star-static">&#9733;</span>
+                  <span class="rating-star-static">&#9733;</span>
+                </div>
+                <div>
+                  {% if template_data.average_rating %}
+                    <div class="fw-semibold">
+                      Average rating: {{ template_data.average_rating|floatformat:1 }} / 5
+                    </div>
+                  {% else %}
+                    <div class="fw-semibold">Average rating: 0.0 / 5</div>
+                  {% endif %}
+                  <small class="text-muted">
+                    {% if template_data.rating_count %}
+                      {{ template_data.rating_count }} rating{{ template_data.rating_count|pluralize }}
+                    {% else %}
+                      Be the first to rate this movie.
+                    {% endif %}
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            {% if user.is_authenticated %}
+              <form method="post"
+                    action="/movies/{{ template_data.movie.id }}/rate/"
+                    class="d-flex flex-column flex-md-row align-items-md-center gap-3"
+                    data-rating-form
+                    data-current-rating="{{ template_data.user_rating|default:'0' }}">
+                {% csrf_token %}
+                <div class="btn-group rating-star-inputs" role="group" aria-label="Rate this movie">
+                  <input type="radio" class="btn-check" name="rating" id="rating-1" value="1" autocomplete="off">
+                  <label class="btn btn-outline-warning" for="rating-1">&#9733;</label>
+                  <input type="radio" class="btn-check" name="rating" id="rating-2" value="2" autocomplete="off">
+                  <label class="btn btn-outline-warning" for="rating-2">&#9733;</label>
+                  <input type="radio" class="btn-check" name="rating" id="rating-3" value="3" autocomplete="off">
+                  <label class="btn btn-outline-warning" for="rating-3">&#9733;</label>
+                  <input type="radio" class="btn-check" name="rating" id="rating-4" value="4" autocomplete="off">
+                  <label class="btn btn-outline-warning" for="rating-4">&#9733;</label>
+                  <input type="radio" class="btn-check" name="rating" id="rating-5" value="5" autocomplete="off">
+                  <label class="btn btn-outline-warning" for="rating-5">&#9733;</label>
+                </div>
+                <button type="submit" class="btn bg-dark text-white">Submit Rating</button>
+              </form>
+              <small class="text-muted d-block mt-2">
+                Select one star on the left for the lowest rating and the rightmost star for the highest rating.
+              </small>
+              <small class="text-muted d-block" data-user-rating-label>
+                Your rating: <span data-user-rating-number>{{ template_data.user_rating|default:'0' }}</span> / 5
+              </small>
+            {% else %}
+              <div class="alert alert-secondary mb-0" role="alert">
+                <a href="/accounts/login/" class="alert-link">Log in</a> to rate this movie and see your saved rating.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
         <h2>Reviews</h2>
         <hr />
         <ul class="list-group">
@@ -161,4 +227,71 @@
     </div>
   </div>
 </div>
+<script>
+  (function () {
+    const ratingForms = document.querySelectorAll('[data-rating-form]');
+    ratingForms.forEach(function (form) {
+      const current = parseInt(form.dataset.currentRating || '0', 10);
+      if (current > 0) {
+        const currentInput = form.querySelector('input[value="' + current + '"]');
+        if (currentInput) {
+          currentInput.checked = true;
+        }
+      }
+
+      const starGroup = form.querySelector('.rating-star-inputs');
+      const inputs = starGroup ? starGroup.querySelectorAll('input[name="rating"]') : [];
+      const labels = starGroup ? starGroup.querySelectorAll('label') : [];
+      const ratingNumber = form.querySelector('[data-user-rating-number]');
+
+      function updateStarHighlight(activeCount) {
+        labels.forEach(function (label, index) {
+          if (index < activeCount) {
+            label.classList.add('btn-warning', 'text-white');
+            label.classList.remove('btn-outline-warning');
+          } else {
+            label.classList.add('btn-outline-warning');
+            label.classList.remove('btn-warning', 'text-white');
+          }
+        });
+        if (ratingNumber) {
+          ratingNumber.textContent = activeCount.toString();
+        }
+      }
+
+      updateStarHighlight(current);
+
+      inputs.forEach(function (input, index) {
+        input.addEventListener('change', function () {
+          updateStarHighlight(index + 1);
+        });
+      });
+    });
+
+    const averageWrappers = document.querySelectorAll('.rating-average-stars');
+    averageWrappers.forEach(function (wrapper) {
+      const average = parseFloat(wrapper.dataset.average || '0');
+      const stars = wrapper.querySelectorAll('.rating-star-static');
+      stars.forEach(function (star, index) {
+        if (average >= index + 1) {
+          star.classList.add('text-warning');
+        } else {
+          star.classList.add('text-secondary');
+        }
+      });
+    });
+  })();
+</script>
+<style>
+  .rating-average-stars .rating-star-static {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .rating-star-inputs .btn {
+    width: 3rem;
+    font-size: 1.1rem;
+    padding: 0.5rem 0;
+  }
+</style>
 {% endblock content %}
